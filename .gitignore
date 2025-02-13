@@ -27,3 +27,6 @@ Thumbs.db
 
 *checkpoints*/
 */*checkpoints*/
+
+*.jpg
+*.pt

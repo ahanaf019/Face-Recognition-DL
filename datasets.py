@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 import random
-from utils import read_image
+from torch.utils.data import Dataset
+from utils import read_image, resize_image_bbox
 
 
-class PersonIdentificationDataset(nn.Module):
+class PersonIdentificationDataset(Dataset):
     def __init__(self, person_image_dict: dict, image_size=224, transforms = None):
         super().__init__()
         self.person_image_dict = person_image_dict
@@ -42,3 +43,27 @@ class PersonIdentificationDataset(nn.Module):
             image2 = self.transforms(image2)
 
         return image1, image2, label
+    
+
+class FaceBBoxDataset(Dataset):
+    def __init__(self, paths, bboxes, image_size=224, transforms=None):
+        super().__init__()
+        self.paths = paths
+        self.bboxes = bboxes
+        self.image_size = image_size
+        self.transforms = transforms
+    
+    def __len__(self):
+        return len(self.paths)
+    
+    def __getitem__(self, index):
+        path = self.paths[index]
+        bbox = self.bboxes[index]
+
+        image = read_image(path, size=None)
+        image, bbox = resize_image_bbox(image, bbox, new_size=(self.image_size, self.image_size))
+        bbox = [x / self.image_size for x in bbox]
+        
+        if self.transforms is not None:
+            image = self.transforms(image)
+        return image, torch.tensor(bbox)

@@ -37,16 +37,41 @@ def read_image(path: str, size: tuple[int, int]=(96, 96))-> np.ndarray:
 
     Args:
         path (str): Whole path of image
-        size (tuple[int, int], optional): Resize image to `size`. Defaults to (96, 96).
+        size (tuple[int, int], optional): Resize image to `size` if it is not `None`. Defaults to (96, 96).
 
     Returns:
         np.ndarray: Numpy UINT8 Image
     """
     image = cv2.imread(path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, size)
+    if size is not None:
+        image = cv2.resize(image, size)
     return image.astype(np.uint8)
 
+
+def resize_image_bbox(image: np.ndarray, bbox: tuple, new_size: tuple[int, int]=(96, 96))-> tuple[np.ndarray, tuple]:
+    """
+    Resizes an image and scales bounding box coordinates accordingly.
+    
+    Args:
+        image (numpy.ndarray): The original image.
+        bboxes (tuple): Bounding boxes (x_min, y_min, w, h).
+        new_size (tuple): New image size (width, height).
+    
+    Returns:
+        resized_image (numpy.ndarray): Resized image.
+        resized_bbox (tuple): Rescaled bounding boxes.
+    """
+    old_h, old_w = image.shape[:2]
+    new_w, new_h = new_size
+
+    x_scale = new_w / old_w
+    y_scale = new_h / old_h
+    resized_image = cv2.resize(image, (new_w, new_h))
+
+    x1, y1, w, h = bbox
+    resized_bbox = int(x1 * x_scale), int(y1 * y_scale), int(w * x_scale), int(h * y_scale)
+    return resized_image, resized_bbox
 
 
 def get_images_labels(db_name:str, subset:str, start_idx_per_class=0, end_idx_per_class=-1, shuffle=True, seed=322)-> tuple[List, List]:

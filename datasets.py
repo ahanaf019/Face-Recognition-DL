@@ -4,7 +4,7 @@ import random
 from utils import read_image
 
 
-class FaceDetectionDataset(nn.Module):
+class PersonIdentificationDataset(nn.Module):
     def __init__(self, person_image_dict: dict, image_size=224, transforms = None):
         super().__init__()
         self.person_image_dict = person_image_dict

@@ -9,8 +9,8 @@ from pathlib import Path
 import os
 import random
 from utils import *
-from datasets import FaceDetectionDataset
-from models import FaceDetectionModel
+from datasets import PersonIdentificationDataset
+from models import PersonIdentificationModel
 from losses import ContrastiveLoss
 from trainer import FaceDetectorTrainer
 
@@ -24,7 +24,7 @@ LEARNING_RATE = 1e-4
 NUM_EPOCHS = 70
 
 def get_person_image_dict(subset):
-    persons = sorted(glob(f'{os.environ["HOME"]}/Datasets/CelebA/img_celeba/{subset}/*'))
+    persons = sorted(glob(f'{os.environ["HOME"]}/Datasets/CelebA/img_align_celeba/{subset}/*'))
 
     person_dict = {}
     for person in persons:
@@ -62,8 +62,8 @@ test_data_transforms = transforms.Compose([
 
 plt.figure(figsize=(5*4,2*4))
 
-train_db = FaceDetectionDataset(train_dict, image_size=IMAGE_SIZE, transforms=train_data_transforms)
-val_db = FaceDetectionDataset(val_dict, image_size=IMAGE_SIZE, transforms=test_data_transforms)
+train_db = PersonIdentificationDataset(train_dict, image_size=IMAGE_SIZE, transforms=train_data_transforms)
+val_db = PersonIdentificationDataset(val_dict, image_size=IMAGE_SIZE, transforms=test_data_transforms)
 
 train_loader = DataLoader(train_db, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=os.cpu_count(), prefetch_factor=2)
 val_loader = DataLoader(val_db, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), prefetch_factor=2)
@@ -87,7 +87,7 @@ i = 0
 # plt.show()
 # print(train_dict)
 
-model = FaceDetectionModel(hid_dim=512, out_dim=128).to(device)
+model = PersonIdentificationModel(hid_dim=512, out_dim=128).to(device)
 loss_fn = ContrastiveLoss()
 optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 

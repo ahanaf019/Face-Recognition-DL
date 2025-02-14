@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision
 
 
-class FaceDetectionModel(nn.Module):
+class PersonIdentificationModel(nn.Module):
     def __init__(self, hid_dim=512, out_dim=128):
         super().__init__()
         self.cnn = torchvision.models.resnet50(torchvision.models.ResNet50_Weights.DEFAULT)

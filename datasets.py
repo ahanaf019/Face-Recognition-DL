@@ -3,14 +3,14 @@ import torch.nn as nn
 import random
 from torch.utils.data import Dataset
 from utils import read_image, resize_image_bbox
-
+import cv2
 
 class PersonIdentificationDataset(Dataset):
-    def __init__(self, person_image_dict: dict, image_size=224, transforms = None):
+    def __init__(self, person_image__bbox_dict: dict, image_size=224, transforms = None):
         super().__init__()
-        self.person_image_dict = person_image_dict
+        self.person_image_dict = person_image__bbox_dict
         self.transforms = transforms
-        self.keys = list(person_image_dict.keys()) + list(person_image_dict.keys())
+        self.keys = list(person_image__bbox_dict.keys()) + list(person_image__bbox_dict.keys())
         self.image_size = image_size
     
     def __len__(self):
@@ -18,31 +18,38 @@ class PersonIdentificationDataset(Dataset):
 
     def __getitem__(self, index):
         person1 = self.person_image_dict[self.keys[index]]
-        image1 = random.choice(person1)
+        # print(person1)
+        image_bbox_pair1 = random.choice(person1)
 
         # Positive [Same person pair]
-        if torch.randint(low=0, high=2, size=()).item() == 1:
+        if random.random() > 0.5:
             person2 = self.person_image_dict[self.keys[index]]
             label = 1
         
         # Negative [Different person pair]
         else:
-            sampled = index
-            while sampled == index:
-                sampled = random.randint(0, len(self.keys) - 1)
-            person2 = self.person_image_dict[self.keys[sampled]]
+            negative_person = random.choice([k for k in self.keys if k != self.keys[index]])
+            person2 = self.person_image_dict[negative_person]
             label = 0
-        image2 = random.choice(person2)
+        image_bbox_pair2 = random.choice(person2)
 
 
-        image1 = read_image(image1, size=(self.image_size, self.image_size))
-        image2 = read_image(image2, size=(self.image_size, self.image_size))
+        image1 = read_image(image_bbox_pair1[0], size=None)
+        image2 = read_image(image_bbox_pair2[0], size=None)
+
+        x1, y1, w1, h1 = image_bbox_pair1[1]
+        x2, y2, w2, h2 = image_bbox_pair2[1]
+        image1 = image1[y1:y1 + h1, x1:x1 + w1]
+        image2 = image2[y2:y2 + h2, x2:x2 + w2]
+        
+        image1 = cv2.resize(image1, (self.image_size, self.image_size))
+        image2 = cv2.resize(image2, (self.image_size, self.image_size))
 
         if self.transforms is not None:
             image1 = self.transforms(image1)
             image2 = self.transforms(image2)
 
-        return image1, image2, label
+        return image1, image2, torch.tensor(label, dtype=torch.float32)
     
 
 class FaceBBoxDataset(Dataset):

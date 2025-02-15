@@ -12,7 +12,7 @@ from utils import *
 from datasets import PersonIdentificationDataset
 from models import PersonIdentificationModel
 from losses import ContrastiveLoss
-from trainer import FaceDetectorTrainer
+from trainer import PersonIdentifierTrainer
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'

@@ -18,7 +18,7 @@ import torchmetrics
 import copy
 
 
-class FaceDetectorTrainer():
+class PersonIdentifierTrainer():
     def __init__(
             self,
             model:nn.Module,

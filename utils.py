@@ -4,7 +4,7 @@ from typing import List
 from pathlib import Path
 
 
-
+import pandas as pd
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -119,6 +119,131 @@ def get_images_labels(db_name:str, subset:str, start_idx_per_class=0, end_idx_pe
     print(f'Total Classes: {len(classes)}')
     print(f'Total Images ({end_idx_per_class} per class): {len(images_list)}')
     return images_list, labels
+
+
+def get_image_bbox_dict(subset):
+    image_base_dir = '~/Datasets/CelebA/img_celeba/test/10001/182659.jpg'
+    partition_file = f'{os.environ["HOME"]}/Datasets/CelebA/Eval/list_eval_partition.txt'
+    identity_file = f'{os.environ["HOME"]}/Datasets/CelebA/Anno/identity_CelebA.txt'
+    bbox_file = f'{os.environ["HOME"]}/Datasets/CelebA/Anno/list_bbox_celeba.txt'
+    # Read Partition File
+    partition_df = pd.read_table(partition_file, sep=' ', header=None)
+    partition_df.rename({
+        0: 'filename',
+        1: 'subset'
+    }, axis=1, inplace=True)
+
+    mapping = {
+        0 : 'train',
+        1 : 'val',
+        2 : 'test'
+    }
+    partition_df['subset'] = partition_df['subset'].apply(lambda x: mapping[x])
+
+    # Read Itentity File
+    identity_df = pd.read_table(identity_file, sep=' ', header=None)
+    identity_df.rename({
+        0: 'filename',
+        1: 'person_id'
+    }, axis=1, inplace=True)
+
+    # Merge Partition and Identity files
+    df = pd.merge(partition_df, identity_df, on='filename')
+    
+    # Read and process BBox file
+    with open(bbox_file, 'r') as f:
+        lines = f.readlines()
+    lines = [x.split() for x in lines]
+
+    bbox_df = pd.DataFrame(lines[1:])
+    bbox_df.rename({
+        0: 'filename',
+        1: 'x1',
+        2: 'y1',
+        3: 'width',
+        4: 'height'
+    }, axis=1, inplace=True)
+
+    for column in bbox_df.columns[1:]:
+        bbox_df[column] = bbox_df[column].astype(np.int32)
+    # Merge into the final DataFrame
+    df = pd.merge(df, bbox_df, on='filename')
+
+    df = df[df['subset'] == subset]
+
+    filenames = []
+    for row in df.iterrows():
+        filenames.append(f'{os.environ["HOME"]}/Datasets/CelebA/img_celeba/{subset}/{row[1]["person_id"]}/{row[1]["filename"]}')
+
+    bbox = df.iloc[:, 3:].to_numpy()
+    return filenames, bbox
+
+
+def get_person_image_bbox_dict(subset:str):
+    partition_file = f'{os.environ["HOME"]}/Datasets/CelebA/Eval/list_eval_partition.txt'
+    identity_file = f'{os.environ["HOME"]}/Datasets/CelebA/Anno/identity_CelebA.txt'
+    bbox_file = f'{os.environ["HOME"]}/Datasets/CelebA/Anno/list_bbox_celeba.txt'
+    # Read Partition File
+    partition_df = pd.read_table(partition_file, sep=' ', header=None)
+    partition_df.rename({
+        0: 'filename',
+        1: 'subset'
+    }, axis=1, inplace=True)
+
+    mapping = {
+        0 : 'train',
+        1 : 'val',
+        2 : 'test'
+    }
+    partition_df['subset'] = partition_df['subset'].apply(lambda x: mapping[x])
+
+    # Read Itentity File
+    identity_df = pd.read_table(identity_file, sep=' ', header=None)
+    identity_df.rename({
+        0: 'filename',
+        1: 'person_id'
+    }, axis=1, inplace=True)
+
+    # Merge Partition and Identity files
+    df = pd.merge(partition_df, identity_df, on='filename')
+    
+    # Read and process BBox file
+    with open(bbox_file, 'r') as f:
+        lines = f.readlines()
+    lines = [x.split() for x in lines]
+
+    bbox_df = pd.DataFrame(lines[1:])
+    bbox_df.rename({
+        0: 'filename',
+        1: 'x1',
+        2: 'y1',
+        3: 'width',
+        4: 'height'
+    }, axis=1, inplace=True)
+
+    for column in bbox_df.columns[1:]:
+        bbox_df[column] = bbox_df[column].astype(np.int32)
+    # Merge into the final DataFrame
+    df = pd.merge(df, bbox_df, on='filename')
+
+    df = df[df['subset'] == subset]
+
+    filenames = []
+    for row in df.iterrows():
+        filenames.append(f'{os.environ["HOME"]}/Datasets/CelebA/img_celeba/{subset}/{str(row[1]["person_id"])}/{row[1]["filename"]}')
+
+    def process_row(row):
+        row['filename'] = f'{os.environ["HOME"]}/Datasets/CelebA/img_celeba/{row["subset"]}/{row["person_id"]}/{row["filename"]}'
+        return row
+
+    person_dict = {}
+    group = df.groupby('person_id')
+    for person, grouped_df in group:
+        grouped_df = grouped_df.apply(process_row, axis=1)
+        filenames = grouped_df['filename'].tolist()
+        bboxes = grouped_df.iloc[:, 3:].to_numpy()
+        person_dict[person] = list(zip(filenames, bboxes))
+    return person_dict
 
 
 

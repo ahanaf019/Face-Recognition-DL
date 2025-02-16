@@ -37,7 +37,7 @@ plt.figure(figsize=(5*4,2*4))
 bbox_model = FaceBBoxModel(hid_dim=512)
 bbox_model, _ = load_state('./checkpoints/FaceBBoxModel.pt', bbox_model, None)
 
-feature_extractor = PersonIdentificationModel(hid_dim=512, out_dim=128)
+feature_extractor = PersonIdentificationModel(hid_dim=512, out_dim=256)
 feature_extractor, _ = load_state('./checkpoints/PersonIdentificationModel.pt', feature_extractor, None)
 
 
@@ -88,32 +88,27 @@ with torch.inference_mode():
     d7 = feature_extractor.inference(test_data_transforms(image7).unsqueeze(0))
 
 from torch.nn.functional import cosine_similarity
-# def cosine_sim(embedding1, embedding2):
-#     # embedding1 = torch.tensor(embedding1).unsqueeze(0)
-#     # embedding2 = torch.tensor(embedding2).unsqueeze(0)
-#     # print(embedding1.shape, embedding2.shape)
-#     return cosine_similarity(embedding1, embedding2).item()
+
+def cosine_sim(embedding1, embedding2):
+    return cosine_similarity(embedding1, embedding2).item()
 
 
-def l2_normalize(embedding):
-    return embedding / np.linalg.norm(embedding)
 
 def euclidian_distance(embedding1, embedding2):
-    embedding1 = l2_normalize(embedding1)
-    embedding2 = l2_normalize(embedding2)
-    return np.linalg.norm(embedding1 - embedding2)
+    euclidean_dist = torch.norm(embedding1 - embedding2, p=2)
+    return euclidean_dist.item()
 
-print('1 vs 2', euclidian_distance(d1, d2))
-print('1 vs 3', euclidian_distance(d1, d3))
-print('1 vs 4', euclidian_distance(d1, d4))
-print('1 vs 5', euclidian_distance(d1, d5))
-print('1 vs 6', euclidian_distance(d1, d6))
-print('1 vs 7', euclidian_distance(d1, d7))
+print('1 vs 2', cosine_sim(d1, d2))
+print('1 vs 3', cosine_sim(d1, d3))
+print('1 vs 4', cosine_sim(d1, d4))
+print('1 vs 5', cosine_sim(d1, d5))
+print('1 vs 6', cosine_sim(d1, d6))
+print('1 vs 7', cosine_sim(d1, d7))
 
 print()
-print('3 vs 1', euclidian_distance(d3, d1))
-print('3 vs 2', euclidian_distance(d3, d2))
-print('3 vs 4', euclidian_distance(d3, d4))
-print('3 vs 5', euclidian_distance(d3, d5))
-print('3 vs 6', euclidian_distance(d3, d6))
-print('3 vs 7', euclidian_distance(d3, d7))
+print('3 vs 1', cosine_sim(d3, d1))
+print('3 vs 2', cosine_sim(d3, d2))
+print('3 vs 4', cosine_sim(d3, d4))
+print('3 vs 5', cosine_sim(d3, d5))
+print('3 vs 6', cosine_sim(d3, d6))
+print('3 vs 7', cosine_sim(d3, d7))
